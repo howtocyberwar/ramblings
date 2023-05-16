@@ -1,44 +1,46 @@
 import csv
 import sys
 
-def main(input_file, output_root):
-    favicons = {}
-    domains = {}
-    favicon_to_domain = []
-    favicon_id = 1
-    domain_id = 1
+def split_csv(input_filename, output_prefix):
+    # Create/open the output files
+    with open(output_prefix + '_domains.csv', 'w', newline='') as domains_file, open(output_prefix + '_favicons.csv', 'w', newline='') as favicons_file, open(output_prefix + '_favtodomains.csv', 'w', newline='') as favtodomains_file:
 
-    with open(input_file, 'r') as csvfile:
-        reader = csv.reader(csvfile)
-        for row in reader:
-            url, favicon_hash, favicon_path = row
-            # Skip this row if the favicon hash is empty
-            if not favicon_hash:
-                continue
-            if favicon_hash not in favicons:
-                favicons[favicon_hash] = (favicon_id, favicon_path)
-                favicon_id += 1
-            if url not in domains:
-                domains[url] = domain_id
-                domain_id += 1
-            favicon_to_domain.append((favicons[favicon_hash][0], domains[url]))
+        # Create CSV writer objects
+        domains_writer = csv.writer(domains_file)
+        favicons_writer = csv.writer(favicons_file)
+        favtodomains_writer = csv.writer(favtodomains_file)
 
-    with open(f'{output_root}-favicons.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        for favicon_hash, (favicon_id, favicon_path) in favicons.items():
-            writer.writerow([favicon_id, favicon_hash, favicon_path])
+        # Write headers for the new CSV files
+        domains_writer.writerow(['id', 'url'])
+        favicons_writer.writerow(['id', 'hash', 'path'])
+        favtodomains_writer.writerow(['favicon_id', 'domain_id'])
 
-    with open(f'{output_root}-domains.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        for url, domain_id in domains.items():
-            writer.writerow([domain_id, url])
+        # Open the input CSV file
+        with open(input_filename, 'r') as f:
+            reader = csv.reader(f)
 
-    with open(f'{output_root}-favtodom.csv', 'w', newline='') as csvfile:
-        writer = csv.writer(csvfile)
-        for favicon_id, domain_id in favicon_to_domain:
-            writer.writerow([favicon_id, domain_id])
+            favicons = {}
+            favicon_id = 1
 
-if __name__ == '__main__':
-    input_file = sys.argv[1]
-    output_root = sys.argv[2]
-    main(input_file, output_root)
+            for row in reader:
+                # Write a row to the domains file
+                domains_writer.writerow([row[0], row[1]])
+
+                # If the favicon hash is new, write a row to the favicons file and save the favicon_id
+                if row[2] and row[2] not in favicons:
+                    favicons[row[2]] = favicon_id
+                    favicons_writer.writerow([favicon_id, row[2], row[3]])
+                    favicon_id += 1
+                elif row[2] == '':
+                    favicons[row[2]] = None
+
+                # Write a row to the favtodomains file
+                favtodomains_writer.writerow([favicons[row[2]], row[0]])
+
+    print("Files have been split successfully.")
+
+if __name__ == "__main__":
+    if len(sys.argv) != 3:
+        print("Usage: python script.py <input_filename> <output_prefix>")
+    else:
+        split_csv(sys.argv[1], sys.argv[2])
