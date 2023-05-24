@@ -1,7 +1,7 @@
 import json
 import csv
 import sys
-
+ 
 def convert_json_to_csv(json_file, field, domains_dict):
     output_file = f'{field}.csv'
     field_to_domains_file = f'{field}-to-domains.csv'
