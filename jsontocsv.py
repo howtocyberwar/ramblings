@@ -10,10 +10,14 @@ def convert_json_to_csv(json_file, field, domains_dict):
         writer = csv.writer(f_output)
         field_domains_writer = csv.writer(f_field_domains)
 
+        field_id_map = {}
+        domain_id_map = {}
+
+        next_field_id = 1
+        next_domain_id = 1
+
         writer.writerow(['id', field])
         field_domains_writer.writerow(['field_id', 'domain_id'])
-
-        next_id = 1
 
         for line in f_json:
             try:
@@ -22,13 +26,20 @@ def convert_json_to_csv(json_file, field, domains_dict):
                 field_value = obj.get(field)
 
                 if field_value:
-                    field_id = next_id
-                    writer.writerow([field_id, field_value])
-                    next_id += 1
+                    field_id = field_id_map.get(field_value)
+                    if not field_id:
+                        field_id = next_field_id
+                        field_id_map[field_value] = field_id
+                        writer.writerow([field_id, field_value])
+                        next_field_id += 1
 
-                    domain_id = domains_dict.get(domain)
-                    if domain_id:
+                    domain_id = domain_id_map.get(domain)
+                    if not domain_id:
+                        domain_id = next_domain_id
+                        domain_id_map[domain] = domain_id
                         field_domains_writer.writerow([field_id, domain_id])
+                        next_domain_id += 1
+
             except json.JSONDecodeError:
                 continue
 
