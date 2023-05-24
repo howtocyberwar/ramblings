@@ -7,7 +7,6 @@ def convert_json_to_csv(json_file, field, domains_dict):
     field_to_domains_file = f'{field}-to-domains.csv'
 
     with open(json_file, 'r') as f_json, open(output_file, 'w', newline='') as f_output, open(field_to_domains_file, 'w', newline='') as f_field_domains:
-        json_data = (json.loads(line) for line in f_json)
         writer = csv.writer(f_output)
         field_domains_writer = csv.writer(f_field_domains)
 
@@ -16,18 +15,22 @@ def convert_json_to_csv(json_file, field, domains_dict):
 
         next_id = 1
 
-        for obj in json_data:
-            domain = obj['input']
-            field_value = obj.get(field)
+        for line in f_json:
+            try:
+                obj = json.loads(line.strip())
+                domain = obj['input']
+                field_value = obj.get(field)
 
-            if field_value:
-                field_id = next_id
-                writer.writerow([field_id, field_value])
-                next_id += 1
+                if field_value:
+                    field_id = next_id
+                    writer.writerow([field_id, field_value])
+                    next_id += 1
 
-                domain_id = domains_dict.get(domain)
-                if domain_id:
-                    field_domains_writer.writerow([field_id, domain_id])
+                    domain_id = domains_dict.get(domain)
+                    if domain_id:
+                        field_domains_writer.writerow([field_id, domain_id])
+            except json.JSONDecodeError:
+                continue
 
 def load_domains(domains_file):
     domains_dict = {}
